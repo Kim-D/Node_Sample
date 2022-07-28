@@ -1,12 +1,42 @@
-import express from "express"
+import express from "express";
+import http from "http";
+import SocketIO from "socket.io";
 
-const app = express()
+const app = express();
 
-app.set("view engine", "pug")
-app.set("views", __dirname + "/views")
-app.use("/public", express.static(__dirname + "/public"))
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
 
-app.get("/", (req, res) => res.render("home"))
-app.get("/*", (req, res) => res.redirect("/"))
+app.get("/", (req, res) => res.render("home"));
+app.get("/*", (req, res) => res.redirect("/"));
 
-app.listen(3000)
+const httpServer = http.createServer(app);
+const wsServer = SocketIO(httpServer);
+
+wsServer.on("connection", (socket) => {
+    socket.on("join_room", (roomName) => {
+        socket.join(roomName);
+        socket.to(roomName).emit("welcome", socket.id);
+    });
+
+    socket.on("disconnecting", () => {
+        socket.rooms.forEach((room) => socket.to(room).emit("leave", socket.id));
+    });
+
+    socket.on("offer", (offer, roomName, socketId) => {
+        socket.to(socketId).emit("offer", offer, socket.id);
+    });
+
+    socket.on("answer", (answer, roomName, socketId) => {
+        socket.to(socketId).emit("answer", answer, socket.id);
+        //socket.rooms.forEach((room) => socket.to(room).emit("answer", answer, socket.id));
+    });
+
+    socket.on("ice", (ice, roomName, socketId) => {
+        socket.to(socketId).emit("ice", ice, socket.id);
+    });
+});
+
+const handleListen = () => console.log('Listening on http://localhost:3000');
+httpServer.listen(3000, handleListen);
