@@ -139,7 +139,7 @@ socket.on("welcome", async (socketId) => {
     const peerConnection = peerConnections.get(socketId);
     const offer = await peerConnection.createOffer();
     peerConnection.setLocalDescription(offer);
-    socket.emit("offer", offer, roomName, socketId);
+    socket.emit("offer", offer, socketId);
 });
 //B
 socket.on("offer", async (offer, socketId) => {
@@ -148,7 +148,7 @@ socket.on("offer", async (offer, socketId) => {
     peerConnection.setRemoteDescription(offer);
     const answer = await peerConnection.createAnswer();
     peerConnection.setLocalDescription(answer);
-    socket.emit("answer", answer, roomName, socketId);
+    socket.emit("answer", answer, socketId);
 });
 //A - 확인 필요
 //have-local-offer
@@ -229,7 +229,7 @@ function handleIce(data) {
     for (let [key, value] of peerConnections) {
         if (value === data.target) {
             console.log('handleIce - ', key);
-            socket.emit("ice", data.candidate, roomName, key);
+            socket.emit("ice", data.candidate, key);
             break;
         }
     }

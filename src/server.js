@@ -24,17 +24,17 @@ wsServer.on("connection", (socket) => {
         socket.rooms.forEach((room) => socket.to(room).emit("leave", socket.id));
     });
 
-    socket.on("offer", (offer, roomName, socketId) => {
-        socket.to(socketId).emit("offer", offer, socket.id);
+    socket.on("offer", (offer, receiveSocketId) => {
+        socket.to(receiveSocketId).emit("offer", offer, socket.id);
     });
 
-    socket.on("answer", (answer, roomName, socketId) => {
-        socket.to(socketId).emit("answer", answer, socket.id);
+    socket.on("answer", (answer, receiveSocketId) => {
+        socket.to(receiveSocketId).emit("answer", answer, socket.id);
         //socket.rooms.forEach((room) => socket.to(room).emit("answer", answer, socket.id));
     });
 
-    socket.on("ice", (ice, roomName, socketId) => {
-        socket.to(socketId).emit("ice", ice, socket.id);
+    socket.on("ice", (ice, receiveSocketId) => {
+        socket.to(receiveSocketId).emit("ice", ice, socket.id);
     });
 });
 
