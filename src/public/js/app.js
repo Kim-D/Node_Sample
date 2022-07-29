@@ -95,6 +95,7 @@ async function handleCameraChange() {
 function getRemoteStreamVideo(stream) {
     const videos = peerStreams.querySelectorAll("video");
     for (let i = 0;  i < videos.length; i++ ) {
+        console.log('getRemoteStreamVideo - ', videos[i].srcObject.id);
         if (videos[i].srcObject.id === stream.id) {
             return videos[i];
         }
@@ -170,7 +171,9 @@ socket.on("leave", (socketId) => {
     const peerConnection = peerConnections.get(socketId);
     console.log('leave - ', peerConnection);
     //video view 삭제, peerConnection close, Map 에서 삭제
+    //getRemoteStreams() not work! in safari
     const remoteStreamVideo = getRemoteStreamVideo(peerConnection.getRemoteStreams()[0]);
+    console.log('leave remoteStreamVideo - ', remoteStreamVideo);
     if (remoteStreamVideo) {
         peerStreams.removeChild(remoteStreamVideo);
     }
@@ -195,7 +198,17 @@ function makeConnection(socketId) {
         ],
     });
     peerConnection.addEventListener("icecandidate", handleIce);
-    peerConnection.addEventListener("addstream", handleAddStream);
+    //safari 에서 사용 안됨
+    //peerConnection.addEventListener("addstream", handleAddStream);
+    if (peerConnection.addTrack !== undefined) {
+        peerConnection.ontrack = event => {
+            event.streams.forEach(stream => handleAddStream(stream));
+        }
+    } else {
+        peerConnection.onaddstream = event => {
+            handleAddStream(event.stream);
+        }
+    }
     myStream.getTracks().forEach(track => peerConnection.addTrack(track, myStream));
     peerConnections.set(socketId, peerConnection);
 }
@@ -213,16 +226,16 @@ function handleIce(data) {
 
 //video#peerFace(autoplay, playsinline, width="400", height="400")
 
-function handleAddStream(data) {
-    const addedVideo = getRemoteStreamVideo(data.stream);
-    console.log('handleAddStream isAddedVideo - ', data.stream.getVideoTracks());
+function handleAddStream(stream) {
+    const addedVideo = getRemoteStreamVideo(stream);
+    console.log('handleAddStream isAddedVideo - ', addedVideo);
     if (!addedVideo) {
         const peerFace = document.createElement("video");
         peerFace.autoplay = true;
         peerFace.playsinline = true;
         peerFace.width = 400;
         peerFace.height = 400;
-        peerFace.srcObject = data.stream;
+        peerFace.srcObject = stream;
     
         peerStreams.appendChild(peerFace);
     } 
