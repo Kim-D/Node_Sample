@@ -94,10 +94,15 @@ async function handleCameraChange() {
 
 function getRemoteStreamVideo(stream) {
     const videos = peerStreams.querySelectorAll("video");
-    for (let i = 0;  i < videos.length; i++ ) {
-        console.log('getRemoteStreamVideo - ', videos[i].srcObject.id);
-        if (videos[i].srcObject.id === stream.id) {
-            return videos[i];
+    for (let i = 0;  i < videos.length; i++) {
+        if (stream instanceof MediaStream) {
+            if (videos[i].srcObject.id === stream.id) {
+                return videos[i];
+            }
+        } else if (stream instanceof MediaStreamTrack) {
+            if (videos[i].srcObject.getVideoTracks()[0].id === stream.id) {
+                return videos[i];
+            }
         }
     }
 }
@@ -172,7 +177,13 @@ socket.on("leave", (socketId) => {
     console.log('leave - ', peerConnection);
     //video view 삭제, peerConnection close, Map 에서 삭제
     //getRemoteStreams() not work! in safari
-    const remoteStreamVideo = getRemoteStreamVideo(peerConnection.getRemoteStreams()[0]);
+    let remoteStream;
+    if (peerConnection.getRemoteStreams) {
+        remoteStream = peerConnection.getRemoteStreams()[0];
+    } else {
+        remoteStream = peerConnection.getReceivers().find((receiver) => receiver.track.kind === "video").track;
+    }
+    const remoteStreamVideo = getRemoteStreamVideo(remoteStream);
     console.log('leave remoteStreamVideo - ', remoteStreamVideo);
     if (remoteStreamVideo) {
         peerStreams.removeChild(remoteStreamVideo);
