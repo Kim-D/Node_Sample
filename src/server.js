@@ -15,13 +15,19 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
-    socket.on("join_room", (roomName) => {
-        socket.join(roomName);
+    socket.on("join_room", async (roomName) => {
+        await socket.join(roomName);
+        //console.log('==== room client - ', socket.adapter.rooms.get(roomName));
         socket.to(roomName).emit("welcome", socket.id);
     });
 
     socket.on("disconnecting", () => {
         socket.rooms.forEach((room) => socket.to(room).emit("leave", socket.id));
+    });
+
+    socket.on("roomExit", (roomName) => {
+        socket.leave(roomName);
+        socket.to(roomName).emit("leave", socket.id);
     });
 
     socket.on("offer", (offer, receiveSocketId) => {

@@ -4,6 +4,7 @@ const myFaceVideo = document.getElementById("myFace");
 const muteButton = document.getElementById("mute");
 const cameraButton = document.getElementById("camera");
 const camerasSelect = document.getElementById("cameras");
+const roomExit = document.getElementById("exit");
 
 const welcome = document.getElementById("welcome");
 const call = document.getElementById("call");
@@ -92,6 +93,37 @@ async function handleCameraChange() {
     }
 }
 
+function handleRoomExit() {
+    if (myStream) {
+        myStream.getTracks().forEach((track) => track.stop());
+    }
+    myStream = null;
+    muted = false;
+    cameraOff = false;
+    myFaceVideo.srcObject = null;
+
+    const videos = peerStreams.querySelectorAll("video");
+    for (let i = 0;  i < videos.length; i++) {
+        peerStreams.removeChild(videos[i]);
+    }
+
+    for (let [key, value] in peerConnections) {
+        if (value) {
+            value.iceCandidate().clear();
+            value.close();
+        }
+    }
+
+    peerConnections.clear();
+   
+
+    socket.emit("roomExit", roomName);
+    roomName = '';
+
+    call.hidden = true;
+    welcome.hidden = false;
+}
+
 function getRemoteStreamVideo(stream) {
     const videos = peerStreams.querySelectorAll("video");
     for (let i = 0;  i < videos.length; i++) {
@@ -110,6 +142,7 @@ function getRemoteStreamVideo(stream) {
 muteButton.addEventListener("click", handleMuteClick);
 cameraButton.addEventListener("click", handleCameraClick);
 camerasSelect.addEventListener("input", handleCameraChange);
+roomExit.addEventListener("click", handleRoomExit);
 
 // Welcom Form (join a room)
 
